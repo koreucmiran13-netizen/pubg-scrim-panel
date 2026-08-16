@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PUBG Scrim Panel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a25;
+      --bg-hover: #252535;
+      --accent: #f7a000;
+      --accent-dim: #b87800;
+      --text-primary: #ffffff;
+      --text-secondary: #8a8a9a;
+      --text-muted: #5a5a6a;
+      --success: #00c853;
+      --danger: #ff1744;
+      --warning: #ff9100;
+      --border: #2a2a3a;
+    }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+    
+    /* Header */
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .header h1 span { color: var(--text-primary); }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    
+    /* Buttons */
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-primary:hover { background: #ffb020; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #ff4060; }
+    .btn-secondary { background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #33334a; }
+    .btn-success { background: var(--success); color: #000; }
+    .btn-sm { padding: 5px 10px; font-size: 11px; }
+    
+    /* Login */
+    .login-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .login-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      width: 340px;
+      text-align: center;
+    }
+    .login-box h2 { color: var(--accent); margin-bottom: 20px; }
+    .login-box input {
+      width: 100%;
+      padding: 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .login-box input:focus { outline: none; border-color: var(--accent); }
+    
+    /* Main layout */
+    .main { padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+    
+    /* Tabs */
+    .tabs {
+      display: flex; gap: 4px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 4px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+    .tab {
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    .tab:hover { color: var(--text-primary); }
+    .tab.active { background: var(--accent); color: #000; }
+    
+    /* Panels */
+    .panel { display: none; }
+    .panel.active { display: block; }
+    
+    /* Match list */
+    .match-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .match-card:hover { border-color: var(--accent-dim); background: var(--bg-hover); }
+    .match-card .name { font-weight: 600; font-size: 15px; }
+    .match-card .meta { color: var(--text-secondary); font-size: 12px; margin-top: 4px; }
+    
+    /* Results table */
+    .table-wrapper {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th {
+      background: var(--bg-secondary);
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      border-bottom: 2px solid var(--accent);
+    }
+    td {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg-hover); }
+    
+    .rank-1 { color: #ffd700; font-weight: 700; }
+    .rank-2 { color: #c0c0c0; font-weight: 600; }
+    .rank-3 { color: #cd7f32; font-weight: 600; }
+    
+    .points-badge {
+      background: var(--accent);
+      color: #000;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    
+    /* Upload zone */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 16px;
+    }
+    .upload-zone:hover { border-color: var(--accent); background: rgba(247,160,0,0.05); }
+    .upload-zone .icon { font-size: 40px; margin-bottom: 8px; }
+    .upload-zone p { color: var(--text-secondary); font-size: 14px; }
+    
+    .file-input { display: none; }
+    
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 900;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal h3 { color: var(--accent); margin-bottom: 16px; }
+    .modal input, .modal select {
+      width: 100%;
+      padding: 10px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    .modal input:focus { outline: none; border-color: var(--accent); }
+    .modal-actions { display: flex; gap: 8px; margin-top: 12px; }
+    
+    /* Status bar */
+    .status-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .status-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 20px;
+      min-width: 120px;
+    }
+    .status-item .label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; }
+    .status-item .value { font-size: 22px; font-weight: 700; color: var(--accent); margin-top: 2px; }
+    
+    /* OCR result */
+    .ocr-status {
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    .ocr-status.success { background: rgba(0,200,83,0.15); color: var(--success); border: 1px solid var(--success); }
+    .ocr-status.error { background: rgba(255,23,68,0.15); color: var(--danger); border: 1px solid var(--danger); }
+    .ocr-status.info { background: rgba(247,160,0,0.15); color: var(--accent); border: 1px solid var(--accent-dim); }
+    
+    /* Preview images */
+    .preview-grid {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;
+    }
+    .preview-img {
+      width: 120px; height: 70px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header { padding: 12px 16px; }
+      .main { padding: 12px 16px; }
+      .tabs { overflow-x: auto; }
+      .tab { padding: 8px 14px; font-size: 12px; }
+      th, td { padding: 8px 10px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login Overlay -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>🎮 PUBG Scrim Panel</h2>
+    <input type="password" id="loginPassword" placeholder="Admin şifresi" />
+    <button class="btn btn-primary" onclick="doLogin()" style="width:100%;padding:12px;">Giriş Yap</button>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <h1>🎮 <span>PUBG</span> Scrim Panel</h1>
+  <div class="header-actions">
+    <button class="btn btn-secondary btn-sm" onclick="showPanel('matches')">Maçlar</button>
+    <button class="btn btn-secondary btn-sm" onclick="showPanel('teams')">Takımlar</button>
+    <button class="btn btn-secondary btn-sm" onclick="showPanel('settings')">Ayarlar</button>
+    <button class="btn btn-danger btn-sm" onclick="doLogout()">Çıkış</button>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-item">
+      <div class="label">Toplam Maç</div>
+      <div class="value" id="statMatches">0</div>
+    </div>
+    <div class="status-item">
+      <div class="label">Kayıtlı Takım</div>
+      <div class="value" id="statTeams">0</div>
+    </div>
+    <div class="status-item">
+      <div class="label">Slot Sayısı</div>
+      <div class="value" id="statSlots">24</div>
+    </div>
+  </div>
+
+  <!-- Matches Panel -->
+  <div class="panel active" id="panelMatches">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="font-size:18px;">Maçlar</h2>
+      <button class="btn btn-primary" onclick="showNewMatchModal()">+ Yeni Maç</button>
+    </div>
+    <div id="matchList"></div>
+  </div>
+
+  <!-- Match Detail Panel -->
+  <div class="panel" id="panelMatchDetail">
+    <button class="btn btn-secondary btn-sm" onclick="showPanel('matches')" style="margin-bottom:12px;">← Geri</button>
+    <h2 id="detailMatchName" style="font-size:20px;margin-bottom:16px;color:var(--accent);"></h2>
+    
+    <!-- Upload zone -->
+    <div class="upload-zone" onclick="document.getElementById('screenshotInput').click()">
+      <div class="icon">📸</div>
+      <p>Maç sonuç screenshot'larını buraya sürükle veya tıkla</p>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">Birden fazla screenshot seçebilirsin</p>
+    </div>
+    <input type="file" class="file-input" id="screenshotInput" multiple accept="image/*" onchange="handleScreenshots(this)" />
+    <div class="preview-grid" id="previewGrid"></div>
+    <div id="ocrStatus"></div>
+    
+    <!-- Manual result entry -->
+    <div style="margin-top:16px;">
+      <h3 style="font-size:14px;color:var(--text-secondary);margin-bottom:10px;">Manuel Sonuç Ekle</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input type="text" id="manualTeam" placeholder="Takım adı" style="flex:1;min-width:150px;padding:8px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:#fff;font-size:13px;" />
+        <input type="number" id="manualKills" placeholder="Kill" style="width:70px;padding:8px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:#fff;font-size:13px;" />
+        <input type="number" id="manualPlacement" placeholder="Sıra" style="width:70px;padding:8px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:#fff;font-size:13px;" />
+        <button class="btn btn-success btn-sm" onclick="addManualResult()">Ekle</button>
+      </div>
+    </div>
+    
+    <!-- Results table -->
+    <div style="margin-top:20px;">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Takım</th>
+              <th>Kill</th>
+              <th>Sıra</th>
+              <th>Puan</th>
+            </tr>
+          </thead>
+          <tbody id="resultsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Teams Panel -->
+  <div class="panel" id="panelTeams">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="font-size:18px;">Takımlar</h2>
+      <button class="btn btn-primary" onclick="showNewTeamModal()">+ Yeni Takım</button>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Takım Adı</th><th>Oyuncu</th><th>İşlem</th></tr>
+        </thead>
+        <tbody id="teamsTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Settings Panel -->
+  <div class="panel" id="panelSettings">
+    <h2 style="font-size:18px;margin-bottom:16px;">Ayarlar</h2>
+    <div style="max-width:400px;">
+      <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Kill başına puan</label>
+      <input type="number" id="setPointPerKill" style="width:100%;padding:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:#fff;margin-bottom:12px;" />
+      
+      <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Toplam slot sayısı</label>
+      <input type="number" id="setTotalSlots" style="width:100%;padding:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:#fff;margin-bottom:12px;" />
+      
+      <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:4px;">Placement puanları (virgülle ayır, 1. sıradan sona)</label>
+      <input type="text" id="setPlacementPoints" style="width:100%;padding:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:#fff;margin-bottom:12px;" />
+      
+      <button class="btn btn-primary" onclick="saveSettings()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Match Modal -->
+<div class="modal-overlay" id="modalNewMatch">
+  <div class="modal">
+    <h3>Yeni Maç</h3>
+    <input type="text" id="newMatchName" placeholder="Maç adı (örn: Scrim #1)" />
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="createMatch()">Oluştur</button>
+      <button class="btn btn-secondary" onclick="closeModal('modalNewMatch')">İptal</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Team Modal -->
+<div class="modal-overlay" id="modalNewTeam">
+  <div class="modal">
+    <h3>Yeni Takım</h3>
+    <input type="text" id="newTeamName" placeholder="Takım adı" />
+    <input type="number" id="newTeamPlayers" placeholder="Oyuncu sayısı (1-4)" min="1" max="4" />
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="createTeam()">Ekle</button>
+      <button class="btn btn-secondary" onclick="closeModal('modalNewTeam')">İptal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentMatchId = null;
+  let isAdmin = false;
+
+  // ---- Auth ----
+  async function checkAuth() {
+    try {
+      const r = await fetch('/api/me');
+      const d = await r.json();
+      isAdmin = d.isAdmin;
+      if (!isAdmin) {
+        document.getElementById('loginOverlay').style.display = 'flex';
+      } else {
+        document.getElementById('loginOverlay').style.display = 'none';
+        loadAll();
+      }
+    } catch { loadAll(); }
+  }
+
+  async function doLogin() {
+    const pw = document.getElementById('loginPassword').value;
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw })
+    });
+    if (r.ok) {
+      isAdmin = true;
+      document.getElementById('loginOverlay').style.display = 'none';
+      loadAll();
+    } else {
+      alert('Yanlış şifre!');
+    }
+  }
+
+  async function doLogout() {
+    await fetch('/api/logout', { method: 'POST' });
+    isAdmin = false;
+    location.reload();
+  }
+
+  // ---- Panel navigation ----
+  function showPanel(name) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+    if (name === 'matches') loadMatches();
+    if (name === 'teams') loadTeams();
+    if (name === 'settings') loadSettings();
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+  }
+
+  // ---- Data loading ----
+  async function loadAll() {
+    loadMatches();
+    loadTeams();
+    loadSettings();
+    loadStats();
+  }
+
+  async function loadStats() {
+    const [matches, teams, settings] = await Promise.all([
+      fetch('/api/matches').then(r => r.json()),
+      fetch('/api/teams').then(r => r.json()),
+      fetch('/api/settings').then(r => r.json())
+    ]);
+    document.getElementById('statMatches').textContent = matches.length;
+    document.getElementById('statTeams').textContent = teams.length;
+    document.getElementById('statSlots').textContent = settings.totalSlots || 24;
+  }
+
+  async function loadMatches() {
+    const matches = await fetch('/api/matches').then(r => r.json());
+    const list = document.getElementById('matchList');
+    if (matches.length === 0) {
+      list.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:40px;">Henüz maç yok. "+ Yeni Maç" ile başla.</p>';
+      return;
+    }
+    list.innerHTML = matches.map(m => `
+      <div class="match-card" onclick="openMatch('${m.id}')">
+        <div>
+          <div class="name">${m.name}</div>
+          <div class="meta">${new Date(m.date).toLocaleDateString('tr-TR')} • ${m.results ? m.results.length : 0} takım sonuçlandı</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteMatch('${m.id}')">Sil</button>
+      </div>
+    `).join('');
+  }
+
+  async function openMatch(id) {
+    currentMatchId = id;
+    const m = await fetch(`/api/matches/${id}`).then(r => r.json());
+    document.getElementById('detailMatchName').textContent = m.name;
+    renderResults(m.results || []);
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panelMatchDetail').classList.add('active');
+  }
+
+  function renderResults(results) {
+    const sorted = [...results].sort((a, b) => b.points - a.points);
+    const tbody = document.getElementById('resultsTableBody');
+    tbody.innerHTML = sorted.map((r, i) => {
+      const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+      return `<tr>
+        <td class="${rankClass}">${i + 1}</td>
+        <td>${r.teamName}</td>
+        <td>${r.kills}</td>
+        <td>${r.placement}</td>
+        <td><span class="points-badge">${r.points}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function loadTeams() {
+    const teams = await fetch('/api/teams').then(r => r.json());
+    const tbody = document.getElementById('teamsTableBody');
+    tbody.innerHTML = teams.map((t, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${t.name}</td>
+        <td>${t.players}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteTeam('${t.id}')">Sil</button></td>
+      </tr>
+    `).join('');
+  }
+
+  async function loadSettings() {
+    const s = await fetch('/api/settings').then(r => r.json());
+    document.getElementById('setPointPerKill').value = s.pointPerKill ?? 1;
+    document.getElementById('setTotalSlots').value = s.totalSlots ?? 24;
+    document.getElementById('setPlacementPoints').value = (s.placementPoints || []).join(', ');
+  }
+
+  // ---- Actions ----
+  function showNewMatchModal() { document.getElementById('modalNewMatch').classList.add('show'); }
+
+  async function createMatch() {
+    const name = document.getElementById('newMatchName').value.trim();
+    const r = await fetch('/api/match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    if (r.ok) {
+      closeModal('modalNewMatch');
+      document.getElementById('newMatchName').value = '';
+      loadMatches();
+      loadStats();
+      const m = await r.json();
+      openMatch(m.id);
+    }
+  }
+
+  async function deleteMatch(id) {
+    if (!confirm('Bu maçı silmek istediğine emin misin?')) return;
+    await fetch(`/api/match/${id}/delete`, { method: 'POST' });
+    loadMatches();
+    loadStats();
+  }
+
+  function showNewTeamModal() { document.getElementById('modalNewTeam').classList.add('show'); }
+
+  async function createTeam() {
+    const name = document.getElementById('newTeamName').value.trim();
+    const players = Number(document.getElementById('newTeamPlayers').value) || 1;
+    if (!name) return alert('Takım adı gerekli');
+    await fetch('/api/teams', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, players })
+    });
+    closeModal('modalNewTeam');
+    document.getElementById('newTeamName').value = '';
+    document.getElementById('newTeamPlayers').value = '';
+    loadTeams();
+    loadStats();
+  }
+
+  async function deleteTeam(id) {
+    if (!confirm('Takımı silmek istediğine emin misin?')) return;
+    await fetch(`/api/teams/${id}/delete`, { method: 'POST' });
+    loadTeams();
+    loadStats();
+  }
+
+  async function saveSettings() {
+    const pointPerKill = Number(document.getElementById('setPointPerKill').value) || 1;
+    const totalSlots = Number(document.getElementById('setTotalSlots').value) || 24;
+    const placementPoints = document.getElementById('setPlacementPoints').value
+      .split(',')
+      .map(x => Number(x.trim()))
+      .filter(x => !isNaN(x));
+    
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pointPerKill, totalSlots, placementPoints })
+    });
+    alert('Ayarlar kaydedildi!');
+    loadStats();
+  }
+
+  // ---- Screenshot Upload + OCR ----
+  async function handleScreenshots(input) {
+    if (!currentMatchId || !input.files.length) return;
+    
+    // Preview
+    const grid = document.getElementById('previewGrid');
+    grid.innerHTML = '';
+    for (const f of input.files) {
+      const url = URL.createObjectURL(f);
+      grid.innerHTML += `<img src="${url}" class="preview-img" />`;
+    }
+    
+    const status = document.getElementById('ocrStatus');
+    status.innerHTML = '<div class="ocr-status info">⏳ Screenshot\'lar yükleniyor ve AI ile okunuyor...</div>';
+    
+    const formData = new FormData();
+    for (const f of input.files) formData.append('screenshots', f);
+    
+    try {
+      const r = await fetch(`/api/match/${currentMatchId}/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      const d = await r.json();
+      
+      if (d.error) {
+        status.innerHTML = `<div class="ocr-status error">⚠️ ${d.error}</div>`;
+      } else {
+        const count = d.ocr ? d.ocr.length : 0;
+        status.innerHTML = `<div class="ocr-status success">✅ ${d.uploaded} screenshot yüklendi, ${count} takım AI ile okundu ve sonuçlara eklendi!</div>`;
+      }
+      
+      // Refresh results
+      const m = await fetch(`/api/matches/${currentMatchId}`).then(r => r.json());
+      renderResults(m.results || []);
+      loadStats();
+    } catch (err) {
+      status.innerHTML = `<div class="ocr-status error">❌ Hata: ${err.message}</div>`;
+    }
+    
+    input.value = '';
+  }
+
+  // ---- Manual result ----
+  async function addManualResult() {
+    if (!currentMatchId) return;
+    const teamName = document.getElementById('manualTeam').value.trim();
+    const kills = Number(document.getElementById('manualKills').value) || 0;
+    const placement = Number(document.getElementById('manualPlacement').value) || 25;
+    
+    if (!teamName) return alert('Takım adı gerekli');
+    
+    await fetch(`/api/match/${currentMatchId}/add-results`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ results: [{ teamName, kills, placement }] })
+    });
+    
+    document.getElementById('manualTeam').value = '';
+    document.getElementById('manualKills').value = '';
+    document.getElementById('manualPlacement').value = '';
+    
+    const m = await fetch(`/api/matches/${currentMatchId}`).then(r => r.json());
+    renderResults(m.results || []);
+    loadStats();
+  }
+
+  // ---- Enter key for login ----
+  document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  // ---- Init ----
+  checkAuth();
+</script>
+</body>
+</html>
